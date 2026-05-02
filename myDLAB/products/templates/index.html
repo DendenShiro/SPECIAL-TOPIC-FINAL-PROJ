@@ -1,0 +1,8 @@
+<h1>Products</h1>
+<u1>
+    {% for product in products %}
+    <li> {{ product.prodname }} ( Php {{product.price}})</li>
+    <img src= {{ product.image_url }} alt="">
+    {% endfor %}
+    
+</u1>
