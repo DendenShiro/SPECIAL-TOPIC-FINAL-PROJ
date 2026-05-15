@@ -1,8 +1,539 @@
-<h1>Products</h1>
-<u1>
-    {% for product in products %}
-    <li> {{ product.prodname }} ( Php {{product.price}})</li>
-    <img src= {{ product.image_url }} alt="">
-    {% endfor %}
+<div class="page-header">
+    <h1 class="title">Jabol Pharmacy</h1>
+    <button class="cart-toggle" id="openCart" aria-label="Open shopping cart">
+        Cart <span class="cart-count" id="cartCount">0</span>
+    </button>
+</div>
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        gap: 15px;
+    }
+
+    .title {
+        color: #000000;
+        margin: 0;
+        font-size: 32px;
+    }
+
+    .cart-toggle {
+        border: none;
+        background: #27ae60;
+        color: white;
+        padding: 12px 18px;
+        border-radius: 999px;
+        font-size: 16px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 8px 20px rgba(39, 174, 96, 0.2);
+    }
+
+    .cart-count {
+        min-width: 24px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.25);
+        font-weight: 700;
+    }
+
+    .products-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
     
-</u1>
+    .product-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        background: #fff;
+    }
+    
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .product-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+    
+    .product-info {
+        padding: 15px;
+    }
+    
+    .product-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+    
+    .product-price {
+        font-size: 16px;
+        color: #27ae60;
+        font-weight: bold;
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+    }
+
+    .modal-backdrop.active {
+        display: flex;
+    }
+
+    .modal-card {
+        width: min(600px, 100%);
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+        position: relative;
+        max-height: 90vh;
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .modal-header {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #333;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .modal-image {
+        width: 100%;
+        height: 320px;
+        object-fit: contain;
+        background: #f5f5f5;
+        display: block;
+    }
+
+    .modal-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    .modal-description {
+        margin: 0 0 18px;
+        line-height: 1.6;
+        color: #444;
+    }
+
+    .modal-detail {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .modal-detail span {
+        flex: 1 1 140px;
+        padding: 12px 14px;
+        border: 1px solid #eee;
+        border-radius: 10px;
+        background: #fafafa;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .add-to-cart-button {
+        width: 100%;
+        padding: 14px 18px;
+        border: none;
+        border-radius: 10px;
+        background: #27ae60;
+        color: white;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .add-to-cart-button:hover {
+        background: #219150;
+    }
+
+    .cart-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s ease;
+        z-index: 900;
+    }
+
+    .cart-backdrop.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .cart-drawer {
+        position: fixed;
+        top: 0;
+        right: -420px;
+        width: min(420px, 100%);
+        height: 100%;
+        background: #fff;
+        box-shadow: -20px 0 50px rgba(0, 0, 0, 0.15);
+        transition: right 0.25s ease;
+        z-index: 1001;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cart-drawer.active {
+        right: 0;
+    }
+
+    .cart-header {
+        padding: 22px 22px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .cart-title {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .close-cart {
+        border: none;
+        background: transparent;
+        font-size: 24px;
+        cursor: pointer;
+        color: #333;
+    }
+
+    .cart-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 22px 0;
+    }
+
+    .cart-item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 14px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .cart-item:last-child {
+        border-bottom: none;
+    }
+
+    .cart-item-name {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .cart-item-meta {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .cart-qty-controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+    }
+
+    .cart-qty-button {
+        width: 28px;
+        height: 28px;
+        border: 1px solid #ddd;
+        background: #fff;
+        color: #333;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cart-qty-button:hover {
+        background: #f0f0f0;
+    }
+
+    .cart-qty-value {
+        min-width: 26px;
+        text-align: center;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .cart-footer {
+        padding: 18px 22px 24px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .cart-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .cart-clear {
+        width: 100%;
+        padding: 14px 18px;
+        border: none;
+        border-radius: 10px;
+        background: #e74c3c;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .cart-clear:hover {
+        background: #c0392b;
+    }
+
+    .empty-cart {
+        color: #777;
+        text-align: center;
+        margin-top: 24px;
+        line-height: 1.6;
+    }
+</style>
+
+<div class="products-container">
+    {% for product in products %}
+    <div class="product-card" data-name="{{ product.prodname }}" data-description="{{ product.description|escapejs }}" data-price="{{ product.price }}" data-stock="{{ product.stock }}" data-image="{{ product.image_url }}">
+        <img src="{{ product.image_url }}" alt="{{ product.prodname }}" class="product-image">
+        <div class="product-info">
+            <div class="product-name">{{ product.prodname }}</div>
+            <div class="product-price">₱ {{ product.price }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="modal-backdrop" id="productModal">
+    <div class="modal-card">
+        <button class="modal-header" id="closeModal" aria-label="Close modal">×</button>
+        <img src="" alt="Product image" class="modal-image" id="modalImage">
+        <div class="modal-body">
+            <h2 class="modal-title" id="modalName"></h2>
+            <p class="modal-description" id="modalDescription"></p>
+            <div class="modal-detail">
+                <span id="modalPrice">Price: ₱0</span>
+                <span id="modalStock">Stock: 0</span>
+            </div>
+            <button class="add-to-cart-button" type="button">Add to cart</button>
+        </div>
+    </div>
+</div>
+
+<div class="cart-backdrop" id="cartBackdrop"></div>
+<div class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+        <h3 class="cart-title">Shopping Cart</h3>
+        <button class="close-cart" id="closeCart" aria-label="Close cart">×</button>
+    </div>
+    <div class="cart-body" id="cartItems"></div>
+    <div class="cart-footer">
+        <div class="cart-summary">
+            <span>Items</span>
+            <span id="cartItemCount">0</span>
+        </div>
+        <div class="cart-summary">
+            <span>Total</span>
+            <span id="cartTotalPrice">₱0</span>
+        </div>
+        <button class="cart-clear" id="clearCart" type="button">Clear cart</button>
+    </div>
+</div>
+
+<script>
+    const cards = document.querySelectorAll('.product-card');
+    const modal = document.getElementById('productModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalName = document.getElementById('modalName');
+    const modalDescription = document.getElementById('modalDescription');
+    const modalPrice = document.getElementById('modalPrice');
+    const modalStock = document.getElementById('modalStock');
+    const closeModal = document.getElementById('closeModal');
+    const addToCartButton = document.querySelector('.add-to-cart-button');
+    const openCartButton = document.getElementById('openCart');
+    const closeCartButton = document.getElementById('closeCart');
+    const cartDrawer = document.getElementById('cartDrawer');
+    const cartBackdrop = document.getElementById('cartBackdrop');
+    const cartItemsContainer = document.getElementById('cartItems');
+    const cartItemCount = document.getElementById('cartItemCount');
+    const cartTotalPrice = document.getElementById('cartTotalPrice');
+    const cartCount = document.getElementById('cartCount');
+    const clearCartButton = document.getElementById('clearCart');
+
+    let selectedProduct = null;
+    const cart = [];
+
+    function formatCurrency(value) {
+        return `₱${value}`;
+    }
+
+    function updateCartDisplay() {
+        cartItemsContainer.innerHTML = '';
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+        cartItemCount.textContent = totalItems;
+        cartCount.textContent = totalItems;
+        const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        cartTotalPrice.textContent = formatCurrency(totalPrice);
+
+        if (cart.length === 0) {
+            cartItemsContainer.innerHTML = '<div class="empty-cart">Your cart is empty. Add a product to see it here.</div>';
+            return;
+        }
+
+        cart.forEach(item => {
+            const itemRow = document.createElement('div');
+            itemRow.className = 'cart-item';
+            itemRow.dataset.name = item.name;
+            itemRow.innerHTML = `
+                <div>
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-meta">${formatCurrency(item.price)} each</div>
+                    <div class="cart-qty-controls">
+                        <button class="cart-qty-button cart-decrease" type="button">−</button>
+                        <span class="cart-qty-value">${item.quantity}</span>
+                        <button class="cart-qty-button cart-increase" type="button">+</button>
+                    </div>
+                </div>
+                <div class="cart-item-meta">${formatCurrency(item.price * item.quantity)}</div>
+            `;
+            cartItemsContainer.appendChild(itemRow);
+        });
+    }
+
+    function addProductToCart(product) {
+        if (!product) return;
+        const existing = cart.find(item => item.name === product.name);
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            cart.push({ ...product, quantity: 1 });
+        }
+        updateCartDisplay();
+    }
+
+    function openCart() {
+        cartDrawer.classList.add('active');
+        cartBackdrop.classList.add('active');
+    }
+
+    function closeCart() {
+        cartDrawer.classList.remove('active');
+        cartBackdrop.classList.remove('active');
+    }
+
+    cards.forEach(card => {
+        card.addEventListener('click', () => {
+            selectedProduct = {
+                name: card.dataset.name,
+                description: card.dataset.description,
+                price: Number(card.dataset.price),
+                stock: card.dataset.stock,
+                image: card.dataset.image,
+            };
+
+            modalImage.src = selectedProduct.image;
+            modalImage.alt = selectedProduct.name;
+            modalName.textContent = selectedProduct.name;
+            modalDescription.textContent = selectedProduct.description;
+            modalPrice.textContent = `Price: ${formatCurrency(selectedProduct.price)}`;
+            modalStock.textContent = `Stock: ${selectedProduct.stock}`;
+            modal.classList.add('active');
+        });
+    });
+
+    closeModal.addEventListener('click', () => {
+        modal.classList.remove('active');
+    });
+
+    modal.addEventListener('click', event => {
+        if (event.target === modal) {
+            modal.classList.remove('active');
+        }
+    });
+
+    addToCartButton.addEventListener('click', () => {
+        addProductToCart(selectedProduct);
+        modal.classList.remove('active');
+        openCart();
+    });
+
+    openCartButton.addEventListener('click', openCart);
+    closeCartButton.addEventListener('click', closeCart);
+    cartBackdrop.addEventListener('click', closeCart);
+
+    clearCartButton.addEventListener('click', () => {
+        cart.length = 0;
+        updateCartDisplay();
+    });
+
+    cartItemsContainer.addEventListener('click', event => {
+        const button = event.target.closest('.cart-qty-button');
+        if (!button) return;
+
+        const row = button.closest('.cart-item');
+        const itemName = row.dataset.name;
+        const item = cart.find(entry => entry.name === itemName);
+        if (!item) return;
+
+        if (button.classList.contains('cart-increase')) {
+            item.quantity += 1;
+        }
+
+        if (button.classList.contains('cart-decrease')) {
+            item.quantity -= 1;
+            if (item.quantity <= 0) {
+                const index = cart.indexOf(item);
+                if (index !== -1) cart.splice(index, 1);
+            }
+        }
+
+        updateCartDisplay();
+    });
+
+    updateCartDisplay();
+</script>
