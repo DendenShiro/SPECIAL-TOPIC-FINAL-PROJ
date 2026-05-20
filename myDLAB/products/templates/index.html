@@ -246,7 +246,7 @@
 
     .cart-item {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: auto 1fr auto;
         gap: 12px;
         align-items: center;
         padding: 14px 0;
@@ -255,6 +255,20 @@
 
     .cart-item:last-child {
         border-bottom: none;
+    }
+
+    .cart-item-image {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid #eee;
+    }
+
+    .cart-item-content {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
     }
 
     .cart-item-name {
@@ -432,7 +446,8 @@
             itemRow.className = 'cart-item';
             itemRow.dataset.name = item.name;
             itemRow.innerHTML = `
-                <div>
+                <img src="${item.image}" alt="${item.name}" class="cart-item-image">
+                <div class="cart-item-content">
                     <div class="cart-item-name">${item.name}</div>
                     <div class="cart-item-meta">${formatCurrency(item.price)} each</div>
                     <div class="cart-qty-controls">
